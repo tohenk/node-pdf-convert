@@ -56,13 +56,16 @@ class PdfCmdConvert extends PdfCmd {
                     fs.writeFileSync(infile, data.content);
                     const exec = require('child_process').exec;
                     const cmd = `"${libreOfficeBin}" --headless --convert-to pdf:${exporter} --outdir "${outdir}" "${infile}"`;
-                    debug(cmd);
+                    debug(`${socket.id}> ${data.filename}`);
                     exec(cmd, (err, stdout, stderr) => {
                         if (err) {
+                            debug(`${socket.id}> ${data.filename} error: ${err}`);
                             res.error = err;
                         } else if (fs.existsSync(outfile)) {
+                            debug(`${socket.id}> ${data.filename} done`);
                             res.result = fs.readFileSync(outfile);
                         }
+                        debug(`${socket.id}> ${data.filename} cleanup`);
                         fs.rmSync(outdir, {recursive: true, force: true});
                         resolve(res);
                     });
@@ -76,8 +79,7 @@ class PdfCmdConvert extends PdfCmd {
         });
     }
 
-    findLibreOfficeBinary()
-    {
+    findLibreOfficeBinary() {
         if (this.libreOffice === undefined) {
             this.libreOffice = null;
             if (process.platform === 'win32') {
@@ -91,14 +93,13 @@ class PdfCmdConvert extends PdfCmd {
                 } 
             } else {
                 const exec = require('child_process').execSync;
-                this.libreOffice = exec('which soffice');
+                this.libreOffice = exec('which soffice').toString().trim();
             }
         }
         return this.libreOffice;
     }
 
-    getOutdir($dir)
-    {
+    getOutdir($dir) {
         const outdir = path.join(this.config.workdir, 'tmp', $dir);
         if (!fs.existsSync(outdir)) {
             fs.mkdirSync(outdir, {recursive: true});
